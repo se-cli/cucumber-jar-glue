@@ -5,10 +5,22 @@ const { stepTextFromLine } = require('../glue/matcher');
 const { SCHEME } = require('../util/uri');
 const { DOCUMENT_SELECTOR } = require('../util/gherkin');
 
-function locationLinkFor(def, virtual, originRange) {
+async function locationLinkFor(def, virtual, originRange, options = {}) {
   let uri;
   let range;
   if (def.source === 'jar') {
+    const config = options.configRef ? options.configRef() : undefined;
+    if (config && config.jarDefinitionView === 'decompiled' && options.decompiled) {
+      const loc = await options.decompiled.locationFor(def, options.log);
+      if (loc) {
+        return {
+          originSelectionRange: originRange,
+          targetUri: loc.uri,
+          targetRange: loc.range,
+          targetSelectionRange: loc.range
+        };
+      }
+    }
     const loc = virtual.locationFor(def);
     uri = loc.uri;
     range = loc.range;
@@ -26,18 +38,22 @@ function locationLinkFor(def, virtual, originRange) {
   };
 }
 
-function registerDefinitionProvider(index, virtual) {
+function registerDefinitionProvider(index, virtual, options = {}) {
   return vscode.languages.registerDefinitionProvider(
     DOCUMENT_SELECTOR,
     {
-      provideDefinition(document, position) {
+      async provideDefinition(document, position) {
         const step = stepTextFromLine(document.lineAt(position.line).text);
         if (!step || !step.text) return undefined;
         const origin = new vscode.Range(
           position.line, step.textStart,
           position.line, step.textStart + step.text.length
         );
-        return index.findDefinitions(step.text).map(m => locationLinkFor(m.definition, virtual, origin));
+        const links = [];
+        for (const match of index.findDefinitions(step.text)) {
+          links.push(await locationLinkFor(match.definition, virtual, origin, options));
+        }
+        return links;
       }
     }
   );

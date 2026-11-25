@@ -2,6 +2,7 @@
 
 const vscode = require('vscode');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { ZipReader } = require('./zipReader');
@@ -50,10 +51,16 @@ async function requestDecompiledSource(classFilePath) {
 }
 
 class DecompiledDocumentProvider {
-  constructor() {
+  constructor(storageDir) {
+    this.storageDir = storageDir;
     this.contents = new Map();
+    this.cache = new Map();
     this.emitter = new vscode.EventEmitter();
     this.onDidChangeContent = this.emitter.event;
+  }
+
+  keyFor(def) {
+    return `${def.jarPath}!${def.entryName}`;
   }
 
   set(uri, text) {
@@ -69,18 +76,57 @@ class DecompiledDocumentProvider {
       : '// 没有可用的反编译源码。\n// 请安装 Java 反编译器扩展，或为依赖附加 sources JAR。';
   }
 
-  async open(def, storageDir, log) {
-    if (!def || def.source !== 'jar') {
-      throw new Error('只能反编译 JAR 中的 Glue 定义');
-    }
-    const classFile = extractClassFile(def, storageDir);
+  async prepare(def, log) {
+    const classFile = extractClassFile(def, this.storageDir || os.tmpdir());
     let text;
     try {
       text = await requestDecompiledSource(classFile);
     } catch (err) {
       if (log && log.warn) log.warn(def.jarPath, `java.decompile failed: ${err.message}`);
     }
-    if (typeof text !== 'string' || !text.trim()) {
+    return { classFile, text };
+  }
+
+  async ensure(def, log) {
+    if (!def || def.source !== 'jar') {
+      throw new Error('只能反编译 JAR 中的 Glue 定义');
+    }
+    const key = this.keyFor(def);
+    if (this.cache.has(key)) return this.cache.get(key);
+
+    const prepared = await this.prepare(def, log);
+    if (typeof prepared.text !== 'string' || !prepared.text.trim()) {
+      const err = new Error('no decompiler output');
+      err.classFile = prepared.classFile;
+      throw err;
+    }
+    const uri = decompiledUri(def);
+    this.set(uri, prepared.text);
+    const result = { uri, text: prepared.text, classFile: prepared.classFile };
+    this.cache.set(key, result);
+    return result;
+  }
+
+  // Used by the definition provider: prepare content without forcing an editor.
+  // Returns undefined when no decompiler is available so navigation can fall
+  // back to the declaration view.
+  async locationFor(def, log) {
+    try {
+      const result = await this.ensure(def, log);
+      return { uri: result.uri, range: new vscode.Range(0, 0, 0, 0) };
+    } catch (err) {
+      if (log && log.warn) log.warn(def.jarPath, `decompile unavailable: ${err.message}`);
+      return undefined;
+    }
+  }
+
+  async open(def, storageDir, log) {
+    if (storageDir) this.storageDir = storageDir;
+    let result;
+    try {
+      result = await this.ensure(def, log);
+    } catch (err) {
+      const classFile = err.classFile || extractClassFile(def, this.storageDir || os.tmpdir());
       await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(classFile));
       if (vscode.window.showWarningMessage) {
         vscode.window.showWarningMessage(
@@ -90,13 +136,11 @@ class DecompiledDocumentProvider {
       return { opened: 'class', classFile };
     }
 
-    const uri = decompiledUri(def);
-    this.set(uri, text);
-    const editor = await vscode.window.showTextDocument(uri, { preview: true });
+    const editor = await vscode.window.showTextDocument(result.uri, { preview: true });
     if (editor && vscode.languages && vscode.languages.setTextDocumentLanguage) {
       await vscode.languages.setTextDocumentLanguage(editor.document, 'java');
     }
-    return { opened: 'decompiled', uri, classFile, text };
+    return { opened: 'decompiled', uri: result.uri, classFile: result.classFile, text: result.text };
   }
 
   dispose() {

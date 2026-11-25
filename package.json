@@ -2,7 +2,7 @@
   "name": "cucumber-jar-glue",
   "displayName": "Cucumber Jar Glue Index",
   "description": "Index Cucumber Java glue (step definitions, hooks, parameter types) inside dependency JARs without extracting them, and merge it with workspace source for Gherkin navigation.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "se-cli",
   "license": "Apache-2.0",
   "icon": "media/icon.png",
@@ -72,6 +72,16 @@
           "enum": ["auto", "java", "maven", "gradle", "manual"],
           "default": "auto",
           "description": "How to discover dependency JARs. auto tries the Java language server, then Maven/Gradle."
+        },
+        "cucumberGlue.jarDefinitionView": {
+          "type": "string",
+          "enum": ["declaration", "decompiled"],
+          "default": "declaration",
+          "enumDescriptions": [
+            "Open the read-only declaration view generated from .class metadata.",
+            "Open decompiled source via java.decompile; falls back to the declaration view when no decompiler is available."
+          ],
+          "description": "What to open when navigating to a JAR glue definition (Ctrl/Cmd+click or Go to Definition)."
         },
         "cucumberGlue.classpathRoots": {
           "type": "array",

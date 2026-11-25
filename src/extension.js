@@ -181,7 +181,7 @@ async function activate(context) {
     status, log, virtual, decompiled, diagnostics,
     vscode.workspace.registerTextDocumentContentProvider(SCHEME, virtual),
     vscode.workspace.registerTextDocumentContentProvider(DECOMPILED_SCHEME, decompiled),
-    definition.registerDefinitionProvider(index, virtual),
+    definition.registerDefinitionProvider(index, virtual, { configRef, decompiled, log }),
     definition.registerGlueSelfDefinition(index, virtual),
     references.register(index, virtual),
     completion.register(index),

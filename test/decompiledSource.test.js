@@ -105,6 +105,44 @@ test('extracts the class and opens decompiled source from java.decompile', async
   }
 });
 
+test('locationFor prepares content and caches repeated navigation', async () => {
+  const { dir, def } = makeFixture();
+  const source = 'package com.acme; public class Glue { void hello() {} }';
+  let calls = 0;
+  const vscodeStub = {
+    Uri: uriStub(),
+    Range: class { constructor(a, b, c, d) { Object.assign(this, { a, b, c, d }); } },
+    EventEmitter: class {
+      constructor() { this.event = () => ({ dispose() {} }); }
+      fire() {}
+      dispose() {}
+    },
+    commands: {
+      executeCommand: async (...args) => {
+        calls++;
+        if (args[1] === 'java.decompile') return source;
+        return undefined;
+      }
+    },
+    window: {},
+    languages: {}
+  };
+  const { DecompiledDocumentProvider } = loadModule(vscodeStub);
+  const provider = new DecompiledDocumentProvider(dir);
+
+  try {
+    const first = await provider.locationFor(def, { warn() {} });
+    const second = await provider.locationFor(def, { warn() {} });
+    assert.ok(first && first.uri);
+    assert.equal(first.uri, second.uri);
+    assert.equal(provider.provideTextDocumentContent(first.uri), source);
+    assert.equal(calls, 1, 'repeated navigation must reuse the cached decompilation');
+  } finally {
+    provider.dispose();
+    removeTree(dir);
+  }
+});
+
 test('falls back to opening the class file when no decompiler is available', async () => {
   const { dir, def } = makeFixture();
   const calls = [];

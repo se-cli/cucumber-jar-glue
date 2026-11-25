@@ -1,5 +1,10 @@
 # Changelog / 更新日志
 
+## 0.1.5
+
+- **中文**：新增 `cucumberGlue.jarDefinitionView` 设置，可直接控制 `Ctrl/Cmd+click`（转到定义）打开 JAR 内 Glue 时使用哪种视图，无需再手动执行命令。设为 `decompiled` 后，跳转直接打开反编译源码；没有可用反编译器时自动回退到声明视图，不会跳转失败。默认值仍为 `declaration`，需要时改为 `decompiled` 即可全局生效。
+- **English**: Added the `cucumberGlue.jarDefinitionView` setting, which controls what `Ctrl/Cmd+click` (Go to Definition) opens for glue inside a JAR, so the command no longer has to be run by hand. With `decompiled`, navigation opens decompiled source directly and transparently falls back to the declaration view when no decompiler is available, instead of failing. The default remains `declaration`; switch it to `decompiled` to apply it workspace-wide.
+
 ## 0.1.4
 
 - **中文**：新增 `Cucumber: Open Decompiled Source (JAR Glue)` 命令（`Ctrl/Cmd+Alt+D`）。在 Gherkin 步骤或声明视图方法上执行，即可从 JAR 提取对应 `.class`、调用 Java 语言服务器的 `java.decompile`，以只读虚拟文档打开反编译源码；无可用反编译器时回退打开 `.class` 并提示。

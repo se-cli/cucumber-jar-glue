@@ -42,7 +42,7 @@ Marketplace：https://marketplace.visualstudio.com/items?itemName=se-cli.cucumbe
 或从 Release 下载 VSIX 离线安装：
 
 ```bash
-code --install-extension cucumber-jar-glue-0.1.4.vsix --force
+code --install-extension cucumber-jar-glue-0.1.5.vsix --force
 ```
 
 开发调试：
@@ -73,6 +73,8 @@ code --extensionDevelopmentPath=D:\code\cucumber-for-Java
 | `Cucumber: Open Decompiled Source (JAR Glue)` | 从当前步骤或声明视图方法一键打开 JAR 内 Glue 的反编译源码（`Ctrl/Cmd+Alt+D`） |
 
 > JAR 定义默认打开的是只读声明视图（注解、类名、方法签名），不含方法体。需要看实现时用上面的“Open Decompiled Source”命令；它调用 Java 语言服务器的 `java.decompile`，因此要安装/配置 Java 反编译器（如 Fernflower/CFR/Procyon 扩展），或为依赖附加 sources JAR。没有可用反编译器时会直接打开 `.class` 文件并提示。
+>
+> 如果不想每次跑命令，把 `cucumberGlue.jarDefinitionView` 设为 `decompiled`：之后 `Ctrl/Cmd+点击` JAR 定义会直接打开反编译源码；反编译器不可用时自动回退到声明视图。该设置会持久保存，作为你的默认行为。
 
 ### 主要配置
 
@@ -80,6 +82,7 @@ code --extensionDevelopmentPath=D:\code\cucumber-for-Java
 |---|---|---|
 | `cucumberGlue.enabled` | `true` | 总开关 |
 | `cucumberGlue.classpathProvider` | `auto` | `auto`/`java`/`maven`/`gradle`/`manual` |
+| `cucumberGlue.jarDefinitionView` | `declaration` | JAR 定义跳转打开声明视图还是反编译源码；设为 `decompiled` 后 Ctrl/Cmd+点击直接看源码 |
 | `cucumberGlue.buildClasspath` | `true` | 允许跑 mvn/gradle 解析 classpath |
 | `cucumberGlue.maxJarSizeMb` | `80` | 超过则跳过该 JAR |
 | `cucumberGlue.maxClassEntriesPerJar` | `8000` | 单 JAR 解析上限 |
@@ -140,7 +143,7 @@ Extension ID: se-cli.cucumber-jar-glue
 Or download the VSIX from the release and install offline:
 
 ```bash
-code --install-extension cucumber-jar-glue-0.1.4.vsix --force
+code --install-extension cucumber-jar-glue-0.1.5.vsix --force
 ```
 
 For development:
@@ -171,6 +174,8 @@ Changes to `pom.xml`, `build.gradle*`, `.classpath` or `gradle.lockfile` trigger
 | `Cucumber: Open Decompiled Source (JAR Glue)` | Open the decompiled source of the JAR glue under the cursor / in the declaration view (`Ctrl/Cmd+Alt+D`) |
 
 > JAR definitions open a read-only declaration view (annotations, class name, method signature) with no method body. Use "Open Decompiled Source" to see the implementation: it calls the Java language server's `java.decompile`, so a Java decompiler extension (Fernflower/CFR/Procyon) or an attached sources JAR is required. Without one, the raw `.class` file is opened with a warning.
+>
+> To avoid running the command every time, set `cucumberGlue.jarDefinitionView` to `decompiled`. Then `Ctrl/Cmd+click` on a JAR definition opens decompiled source directly, falling back to the declaration view when no decompiler is available. The setting is persisted as your default behaviour.
 
 ### Key settings
 
@@ -178,6 +183,7 @@ Changes to `pom.xml`, `build.gradle*`, `.classpath` or `gradle.lockfile` trigger
 |---|---|---|
 | `cucumberGlue.enabled` | `true` | Master switch |
 | `cucumberGlue.classpathProvider` | `auto` | `auto` / `java` / `maven` / `gradle` / `manual` |
+| `cucumberGlue.jarDefinitionView` | `declaration` | Open the declaration view or decompiled source for JAR definitions; set to `decompiled` to go straight to source on Ctrl/Cmd+click |
 | `cucumberGlue.buildClasspath` | `true` | Allow running mvn/gradle to resolve the classpath |
 | `cucumberGlue.maxJarSizeMb` | `80` | Skip JARs larger than this |
 | `cucumberGlue.maxClassEntriesPerJar` | `8000` | Per-JAR parsing cap |

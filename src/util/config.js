@@ -11,6 +11,7 @@ function readConfig() {
   return {
     enabled: cfg('enabled', true),
     classpathProvider: cfg('classpathProvider', 'auto'),
+    jarDefinitionView: cfg('jarDefinitionView', 'declaration'),
     classpathRoots: cfg('classpathRoots', []),
     buildClasspath: cfg('buildClasspath', true),
     maxJarSizeMb: Math.max(1, Number(cfg('maxJarSizeMb', 80))),
