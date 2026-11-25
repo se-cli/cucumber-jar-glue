@@ -1,0 +1,6 @@
+.workbuddy/
+*.vsix
+node_modules/
+.vscode-test/
+*.log
+.DS_Store

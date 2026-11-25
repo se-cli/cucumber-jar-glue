@@ -1,0 +1,91 @@
+# Cucumber Jar Glue Index
+
+仓库：https://github.com/alaahong/cucumber-jar-glue
+
+为 VSCode 的 Gherkin 步骤补齐 「Jar 内 Glue 代码」 索引：不解压依赖 JAR，直接读取包内 `.class` 的常量池与运行时注解，把 step definitions、hooks、ParameterType 与工作区 Java 源码索引合并，从而支持跳转定义、查找引用和补全。
+
+## 能力
+
+| 能力 | 说明 |
+|---|---|
+| 定义跳转 | Gherkin 步骤 → JAR 内 Glue 方法，或工作区 `.java` 源码 |
+| 查找引用 | 从 Glue 定义反查所有使用它的 Gherkin 步骤 |
+| 补全 | 输入步骤时提示 JAR + 源码中的 step pattern，标注来源 |
+| 诊断 | 未定义步骤、等价多定义警告 |
+| 兼容性 | Cucumber-JVM v1 (`cucumber.api.java.*`) 与 v2+ (`io.cucumber.java.*`)，含任意 locale 的本地化注解 |
+| 匹配 | Java 正则 + Cucumber Expression 子集；支持发现的自定义 `ParameterType` |
+
+跳转 JAR 内定义时打开的是 `cucumber-glue:` **只读声明视图**（注解、类名、方法签名），不是反编译后的源码。方法体仍需 Java 反编译器扩展。
+
+## 安装
+
+当前没有发布到 VSCode Marketplace，用 VSIX 离线安装：
+
+```bash
+code --install-extension cucumber-jar-glue-0.1.0.vsix --force
+```
+
+开发调试：
+
+```bash
+code --extensionDevelopmentPath=D:\code\cucumber-for-Java
+```
+
+## classpath 发现顺序
+
+`auto`（默认）依次尝试：
+
+1. Java 语言服务器：`java.execute.workspaceCommand('java.project.getAll')` 取项目 URI，再以项目 URI 调 `java.project.getClasspaths`（优先 `scope: 'test'`）。
+2. Maven：`mvn dependency:build-classpath`。
+3. Gradle：注入临时 init script 打印 runtimeClasspath（不改你的构建文件）。
+4. `cucumberGlue.classpathRoots` 手动 glob。
+
+`pom.xml`、`build.gradle*`、`.classpath`、`gradle.lockfile` 变更后自动增量刷新；JAR 用 `size + mtimeMs` 做身份校验，未变化直接命中磁盘缓存。
+
+## 命令
+
+| 命令 | 作用 |
+|---|---|
+| `Cucumber: Refresh Jar Glue Index` | 强制重建索引 |
+| `Cucumber: Clear Jar Glue Cache` | 清空磁盘缓存并重建 |
+| `Cucumber: Show Glue Index` | 列出当前索引的定义并跳转 |
+
+## 主要配置
+
+| 配置 | 默认值 | 说明 |
+|---|---|---|
+| `cucumberGlue.enabled` | `true` | 总开关 |
+| `cucumberGlue.classpathProvider` | `auto` | `auto`/`java`/`maven`/`gradle`/`manual` |
+| `cucumberGlue.buildClasspath` | `true` | 允许跑 mvn/gradle 解析 classpath |
+| `cucumberGlue.maxJarSizeMb` | `80` | 超过则跳过该 JAR |
+| `cucumberGlue.maxClassEntriesPerJar` | `8000` | 单 JAR 解析上限 |
+| `cucumberGlue.maxWorkers` | `4` | 扫描线程上限 |
+| `cucumberGlue.excludePackages` | 见 `package.json` | 不解析的包前缀 |
+| `cucumberGlue.diagnostics.undefined` | `warning` | 未定义步骤级别 |
+
+完整配置项见 `package.json` 的 `contributes.configuration`。
+
+## 开发
+
+运行时零 npm 依赖，测试用 Node 内置 `node:test`：
+
+```bash
+npm test
+```
+
+打包 VSIX：
+
+```bash
+npx --yes --registry https://registry.npmjs.org @vscode/vsce@3.6.2 package --no-git-tag-version
+```
+
+## 发布前置条件（待确认，不是当前事实）
+
+本仓库参考 `se-cli/se-extension-vscode` 的发包结构准备了 `README.md`、`LICENSE`、`media/icon.png`、`.vscodeignore` 和三个 GitHub Actions。真正发布到 Marketplace 还需要：
+
+- `package.json` 的 `publisher` 改为**你已注册的 Marketplace publisher**（当前 `alaahong` 是按已知 GitHub/npm ID 填的占位值，未确认）。
+- `repository` 指向真实仓库：`https://github.com/alaahong/cucumber-jar-glue.git`（已确认仓库存在，public，默认分支 `main`，已写入 `package.json`）。
+- GitHub Secrets 中配置 `VSCE_TOKEN`（Azure DevOps PAT，Marketplace 发布权限）。
+- 在 Marketplace 创建对应 publisher 并实现所有权校验。
+
+这些步骤未执行，也没有在任何公开渠道发布过本扩展。

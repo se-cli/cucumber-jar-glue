@@ -1,0 +1,141 @@
+{
+  "name": "cucumber-jar-glue",
+  "displayName": "Cucumber Jar Glue Index",
+  "description": "Index Cucumber Java glue (step definitions, hooks, parameter types) inside dependency JARs without extracting them, and merge it with workspace source for Gherkin navigation.",
+  "version": "0.1.0",
+  "publisher": "alaahong",
+  "license": "Apache-2.0",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alaahong/cucumber-jar-glue.git"
+  },
+  "categories": [
+    "Testing",
+    "Other"
+  ],
+  "keywords": [
+    "cucumber",
+    "gherkin",
+    "java",
+    "jar",
+    "glue",
+    "step-definitions",
+    "index"
+  ],
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "main": "./src/extension.js",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "package": "npx --yes --registry https://registry.npmjs.org @vscode/vsce@3.6.2 package --no-git-tag-version",
+    "publish:vsix": "npx --yes --registry https://registry.npmjs.org @vscode/vsce@3.6.2 publish --no-git-tag-version"
+  },
+  "activationEvents": [
+    "onLanguage:gherkin",
+    "workspaceContains:**/pom.xml",
+    "workspaceContains:**/build.gradle",
+    "workspaceContains:**/build.gradle.kts",
+    "onCommand:cucumberGlue.refresh",
+    "onCommand:cucumberGlue.clearCache",
+    "onCommand:cucumberGlue.showIndex"
+  ],
+  "contributes": {
+    "commands": [
+      { "command": "cucumberGlue.refresh", "title": "Cucumber: Refresh Jar Glue Index" },
+      { "command": "cucumberGlue.clearCache", "title": "Cucumber: Clear Jar Glue Cache" },
+      { "command": "cucumberGlue.showIndex", "title": "Cucumber: Show Glue Index" }
+    ],
+    "configuration": {
+      "title": "Cucumber Jar Glue",
+      "properties": {
+        "cucumberGlue.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable JAR glue indexing."
+        },
+        "cucumberGlue.classpathProvider": {
+          "type": "string",
+          "enum": ["auto", "java", "maven", "gradle", "manual"],
+          "default": "auto",
+          "description": "How to discover dependency JARs. auto tries the Java language server, then Maven/Gradle."
+        },
+        "cucumberGlue.classpathRoots": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Globs to JAR files or directories when provider is manual (no extraction needed)."
+        },
+        "cucumberGlue.buildClasspath": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow running mvn/gradle to resolve the runtime classpath when the Java language server is unavailable."
+        },
+        "cucumberGlue.maxJarSizeMb": {
+          "type": "number",
+          "default": 80,
+          "description": "Skip JARs larger than this."
+        },
+        "cucumberGlue.maxClassEntriesPerJar": {
+          "type": "number",
+          "default": 8000,
+          "description": "Cap parsed class entries per JAR; truncation is logged."
+        },
+        "cucumberGlue.maxEntrySizeMb": {
+          "type": "number",
+          "default": 8,
+          "description": "Skip individual ZIP entries larger than this (zip-bomb guard)."
+        },
+        "cucumberGlue.maxWorkers": {
+          "type": "number",
+          "default": 4,
+          "description": "Bounded worker threads for JAR scanning."
+        },
+        "cucumberGlue.scanTimeoutMs": {
+          "type": "number",
+          "default": 20000,
+          "description": "Per-JAR scan timeout; timed-out workers are terminated."
+        },
+        "cucumberGlue.excludePackages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [
+            "java/", "javax/", "jdk/", "kotlin/", "scala/", "io/cucumber/",
+            "cucumber/api/", "org/apache/", "com/fasterxml/", "org/springframework/",
+            "io/netty/", "ch/qos/", "org/slf4j/"
+          ],
+          "description": "Class-entry prefixes that are never parsed as glue."
+        },
+        "cucumberGlue.extraAnnotationPrefixes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Additional bytecode annotation prefixes to index, e.g. com/acme/glue/."
+        },
+        "cucumberGlue.diagnostics.undefined": {
+          "type": "string",
+          "enum": ["off", "warning", "information"],
+          "default": "warning",
+          "description": "Severity for Gherkin steps with no glue match."
+        },
+        "cucumberGlue.diagnostics.ambiguous": {
+          "type": "string",
+          "enum": ["off", "warning", "information"],
+          "default": "information",
+          "description": "Severity for Gherkin steps with multiple equally good matches."
+        },
+        "cucumberGlue.periodicCheckMs": {
+          "type": "number",
+          "default": 60000,
+          "description": "Periodic stat-only check for in-place JAR replacement; 0 disables."
+        },
+        "cucumberGlue.trace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Verbose output-channel logging."
+        }
+      }
+    }
+  }
+}

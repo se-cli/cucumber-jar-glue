@@ -1,0 +1,60 @@
+name: Publish to VS Code Marketplace
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to publish (e.g. v0.1.0)'
+        required: true
+        type: string
+      dry-run:
+        description: 'Package only, skip publish'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    name: Publish Extension
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Resolve release tag
+        id: release
+        run: |
+          TAG="${{ inputs.release_tag }}"
+          if [ -z "$TAG" ]; then TAG="${{ github.event.release.tag_name }}"; fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run tests
+        run: npm test
+
+      - name: Package VSIX
+        run: npx --yes @vscode/vsce@3.6.2 package --no-git-tag-version
+
+      - name: Dry run
+        if: ${{ inputs.dry-run == true }}
+        run: echo 'Dry run complete, VSIX packaged but not published.'
+
+      - name: Publish to VS Code Marketplace
+        if: ${{ inputs.dry-run != true }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+        run: npx --yes @vscode/vsce@3.6.2 publish --no-git-tag-version --pat "$VSCE_PAT"
+
+      - name: Upload VSIX to release
+        if: ${{ inputs.dry-run != true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload '${{ steps.release.outputs.tag }}' *.vsix --repo '${{ github.repository }}' --clobber
