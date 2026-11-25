@@ -2,7 +2,7 @@
   "name": "cucumber-jar-glue",
   "displayName": "Cucumber Jar Glue Index",
   "description": "Index Cucumber Java glue (step definitions, hooks, parameter types) inside dependency JARs without extracting them, and merge it with workspace source for Gherkin navigation.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "se-cli",
   "license": "Apache-2.0",
   "icon": "media/icon.png",
