@@ -2,6 +2,8 @@
 
 仓库：https://github.com/se-cli/cucumber-jar-glue
 
+Marketplace：https://marketplace.visualstudio.com/items?itemName=se-cli.cucumber-jar-glue （扩展 ID `se-cli.cucumber-jar-glue`）
+
 为 VSCode 的 Gherkin 步骤补齐 「Jar 内 Glue 代码」 索引：不解压依赖 JAR，直接读取包内 `.class` 的常量池与运行时注解，把 step definitions、hooks、ParameterType 与工作区 Java 源码索引合并，从而支持跳转定义、查找引用和补全。
 
 ## 能力
