@@ -1,6 +1,6 @@
 # Cucumber Jar Glue Index
 
-仓库：https://github.com/alaahong/cucumber-jar-glue
+仓库：https://github.com/se-cli/cucumber-jar-glue
 
 为 VSCode 的 Gherkin 步骤补齐 「Jar 内 Glue 代码」 索引：不解压依赖 JAR，直接读取包内 `.class` 的常量池与运行时注解，把 step definitions、hooks、ParameterType 与工作区 Java 源码索引合并，从而支持跳转定义、查找引用和补全。
 
@@ -79,13 +79,13 @@ npm test
 npx --yes --registry https://registry.npmjs.org @vscode/vsce@3.6.2 package --no-git-tag-version
 ```
 
-## 发布前置条件（待确认，不是当前事实）
+## 发布
 
-本仓库参考 `se-cli/se-extension-vscode` 的发包结构准备了 `README.md`、`LICENSE`、`media/icon.png`、`.vscodeignore` 和三个 GitHub Actions。真正发布到 Marketplace 还需要：
+本仓库参考 `se-cli/se-extension-vscode` 的发包结构准备了 `README.md`、`LICENSE`、`media/icon.png`、`.vscodeignore` 和三个 GitHub Actions。
 
-- `package.json` 的 `publisher` 改为**你已注册的 Marketplace publisher**（当前 `alaahong` 是按已知 GitHub/npm ID 填的占位值，未确认）。
-- `repository` 指向真实仓库：`https://github.com/alaahong/cucumber-jar-glue.git`（已确认仓库存在，public，默认分支 `main`，已写入 `package.json`）。
-- GitHub Secrets 中配置 `VSCE_TOKEN`（Azure DevOps PAT，Marketplace 发布权限）。
-- 在 Marketplace 创建对应 publisher 并实现所有权校验。
+- 仓库：`https://github.com/se-cli/cucumber-jar-glue.git`
+- Marketplace publisher：`se-cli`（与 `se-cli/se-extension-vscode` 同一组织身份）
+- 发布凭据：组织级 GitHub Secret `VSCE_TOKEN`（Azure DevOps PAT，Marketplace 发布权限）
+- 流程：`create-release.yml` 生成 Release 并附 VSIX → 发布 Release 触发 `publish.yml` → `vsce publish`
 
-这些步骤未执行，也没有在任何公开渠道发布过本扩展。
+`publish.yml` 支持 `dry-run` 输入，只打包不发布，可先验证配置。
