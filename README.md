@@ -1,5 +1,7 @@
 # Cucumber Jar Glue Index
 
+项目主页：https://se-cli.github.io/cucumber-jar-glue/
+
 仓库：https://github.com/se-cli/cucumber-jar-glue
 
 Marketplace：https://marketplace.visualstudio.com/items?itemName=se-cli.cucumber-jar-glue （扩展 ID `se-cli.cucumber-jar-glue`）

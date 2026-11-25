@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cucumber Jar Glue Index — VSCode Cucumber Jar Glue 索引</title>
+<link rel="icon" href="icon.png">
+<style>
+  :root {
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --text: #1f2328;
+    --muted: #59636e;
+    --border: #d1d9e0;
+    --accent: #2e7d32;
+    --accent-soft: #e8f5e9;
+    --blue: #0969da;
+    --amber: #9a6700;
+    --red: #cf222e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(255,255,255,.92);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+  }
+  header .wrap { display: flex; align-items: center; gap: 16px; height: 58px; }
+  header img { width: 30px; height: 30px; }
+  header .brand { font-weight: 700; margin-right: auto; }
+  nav a { margin-left: 18px; font-size: 13px; color: var(--muted); }
+  nav a:hover { color: var(--text); text-decoration: none; }
+  .hero { padding: 64px 0 40px; }
+  .hero h1 { font-size: 40px; line-height: 1.2; margin: 0 0 14px; letter-spacing: -.5px; }
+  .hero p.lead { font-size: 18px; color: var(--muted); max-width: 760px; margin: 0 0 24px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border: 1px solid var(--border);
+    border-radius: 999px; background: var(--surface); font-size: 12px; color: var(--muted);
+  }
+  .badge.green { background: var(--accent-soft); border-color: #a5d6a7; color: var(--accent); }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn {
+    display: inline-block; padding: 10px 18px; border-radius: 8px;
+    font-weight: 600; font-size: 14px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text);
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn:hover { text-decoration: none; filter: brightness(.97); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 32px 0 8px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .stat b { display: block; font-size: 26px; color: var(--accent); }
+  .stat span { font-size: 12px; color: var(--muted); }
+  section { padding: 44px 0; border-top: 1px solid var(--border); }
+  section h2 { font-size: 24px; margin: 0 0 18px; }
+  section h3 { font-size: 16px; margin: 24px 0 8px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .card h3 { margin-top: 0; }
+  .card ul { margin: 8px 0 0; padding-left: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .grid .card { padding: 18px; }
+  .grid .card h3 { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: #f0f3f6; font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: #eff2f5; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  pre { background: #0d1117; color: #e6edf3; padding: 14px 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+  pre code { background: none; padding: 0; color: inherit; }
+  .flow { width: 100%; height: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .note { border-left: 4px solid var(--amber); background: #fff8e5; padding: 12px 16px; border-radius: 0 8px 8px 0; }
+  .note.danger { border-left-color: var(--red); background: #fff1f0; }
+  footer { border-top: 1px solid var(--border); padding: 28px 0 44px; color: var(--muted); font-size: 13px; }
+  @media (max-width: 760px) {
+    .hero h1 { font-size: 30px; }
+    .stats, .cols, .grid { grid-template-columns: 1fr; }
+    nav a { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <img src="icon.png" alt="logo">
+    <span class="brand">Cucumber Jar Glue Index</span>
+    <nav>
+      <a href="#overview">概览</a>
+      <a href="#features">能力</a>
+      <a href="#architecture">原理</a>
+      <a href="#install">安装</a>
+      <a href="#usage">使用</a>
+      <a href="#limits">边界</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <h1>让 VSCode 看懂 Jar 包里的 Cucumber Glue</h1>
+    <p class="lead">不解压依赖 JAR、不装 IDEA 插件。直接读取包内 .class 的注解元数据，和 workspace 源码合并成统一索引，让 Gherkin 步骤获得定义跳转、查找引用与补全。</p>
+    <div class="badges">
+      <span class="badge green">Marketplace v0.1.0</span>
+      <span class="badge">se-cli.cucumber-jar-glue</span>
+      <span class="badge">Apache-2.0</span>
+      <span class="badge">零运行时依赖</span>
+      <span class="badge">Java 项目专用</span>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="https://marketplace.visualstudio.com/items?itemName=se-cli.cucumber-jar-glue">在 Marketplace 安装</a>
+      <a class="btn" href="https://github.com/se-cli/cucumber-jar-glue">查看源码</a>
+      <a class="btn" href="https://github.com/se-cli/cucumber-jar-glue/releases/tag/v0.1.0">下载 VSIX</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>18/18</b><span>单元测试通过</span></div>
+      <div class="stat"><b>0</b><span>npm 运行时依赖</span></div>
+      <div class="stat"><b>3</b><span>GitHub Actions 工作流</span></div>
+      <div class="stat"><b>v1 / v2+</b><span>Cucumber 注解兼容</span></div>
+    </div>
+  </div>
+
+  <section id="overview">
+    <h2>它解决什么问题</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>现状</h3>
+        <ul>
+          <li>Cucumber step definition 经常被打包进测试支撑 JAR，源码不在工作区。</li>
+          <li>VSCode 侧只能索引 workspace 里的 .java，Gherkin 步骤因此显示“未定义”。</li>
+          <li>手工解压依赖既慢又不可维护，IDEA Cucumber 插件也不解决 VSCode 的索引缺口。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>本扩展</h3>
+        <ul>
+          <li>从依赖 classpath 中找出 JAR，在内存中读 ZIP 中央目录与条目。</li>
+          <li>解析 .class 常量池和 RuntimeVisible/InvisibleAnnotations，提取 Glue 元数据。</li>
+          <li>与工作区 .java 源码索引合并，统一提供 Gherkin 语言功能。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <h2>核心能力</h2>
+    <div class="grid">
+      <div class="card"><h3>定义跳转</h3><p>Gherkin 步骤直接跳到 JAR 内 Glue 方法，或工作区源码。JAR 定义打开只读声明视图，展示注解、类名、方法签名与参数个数。</p></div>
+      <div class="card"><h3>查找引用</h3><p>从 Glue 定义反查所有使用它的 Gherkin 步骤；也能从步骤定位到定义，再列出全部引用位置。</p></div>
+      <div class="card"><h3>步骤补全</h3><p>输入步骤时提示 JAR 与源码中的 pattern，标注来自哪个 JAR 的哪个类方法，源码定义优先排序。</p></div>
+      <div class="card"><h3>诊断提示</h3><p>未找到匹配时给出 Warning，多个等价定义时给出 Information；索引不完整会明确标注结果可能不全。</p></div>
+      <div class="card"><h3>增量更新</h3><p>监听 pom.xml / build.gradle* / .classpath 变化，重算 classpath 后只扫描新增或身份变化的 JAR。</p></div>
+      <div class="card"><h3>参数类型</h3><p>识别 ParameterType 的 name 与 regexp，让自定义 Cucumber Expression 参数类型参与匹配。</p></div>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <h2>工作原理</h2>
+    <svg class="flow" viewBox="0 0 1000 320" role="img" aria-label="索引流程图">
+      <rect x="20" y="40" width="190" height="70" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+      <text x="115" y="68" text-anchor="middle" font-size="15" font-weight="600" fill="#1f2328">Gherkin 步骤</text>
+      <text x="115" y="90" text-anchor="middle" font-size="12" fill="#59636e">Given / When / Then / 假如 ...</text>
+
+      <rect x="20" y="190" width="190" height="70" rx="8" fill="#ddf4ff" stroke="#0969da"/>
+      <text x="115" y="218" text-anchor="middle" font-size="15" font-weight="600" fill="#1f2328">依赖 JAR</text>
+      <text x="115" y="240" text-anchor="middle" font-size="12" fill="#59636e">ZIP 中央目录 + DEFLATE</text>
+
+      <rect x="270" y="190" width="200" height="70" rx="8" fill="#ffffff" stroke="#d1d9e0"/>
+      <text x="370" y="218" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2328">.class 元数据解析</text>
+      <text x="370" y="240" text-anchor="middle" font-size="12" fill="#59636e">常量池 / RuntimeAnnotations</text>
+
+      <rect x="530" y="115" width="190" height="80" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+      <text x="625" y="145" text-anchor="middle" font-size="15" font-weight="600" fill="#1f2328">合并索引</text>
+      <text x="625" y="167" text-anchor="middle" font-size="12" fill="#59636e">JAR Glue + 源码 Glue</text>
+      <text x="625" y="185" text-anchor="middle" font-size="12" fill="#59636e">+ Gherkin 引用</text>
+
+      <rect x="780" y="40" width="200" height="60" rx="8" fill="#ffffff" stroke="#d1d9e0"/>
+      <text x="880" y="76" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2328">跳转 / 引用 / 补全</text>
+      <rect x="780" y="120" width="200" height="60" rx="8" fill="#ffffff" stroke="#d1d9e0"/>
+      <text x="880" y="156" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2328">诊断 / 状态栏 / 命令</text>
+      <rect x="780" y="200" width="200" height="60" rx="8" fill="#ffffff" stroke="#d1d9e0"/>
+      <text x="880" y="236" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2328">虚拟声明文档</text>
+
+      <line x1="210" y1="225" x2="270" y2="225" stroke="#59636e" stroke-width="2"/>
+      <line x1="470" y1="225" x2="530" y2="155" stroke="#59636e" stroke-width="2"/>
+      <line x1="210" y1="75" x2="530" y2="135" stroke="#59636e" stroke-width="2" stroke-dasharray="5 4"/>
+      <line x1="720" y1="155" x2="780" y2="70" stroke="#59636e" stroke-width="2"/>
+      <line x1="720" y1="155" x2="780" y2="150" stroke="#59636e" stroke-width="2"/>
+      <line x1="720" y1="155" x2="780" y2="230" stroke="#59636e" stroke-width="2"/>
+    </svg>
+
+    <h3>核心模块</h3>
+    <table>
+      <thead><tr><th>模块</th><th>职责</th></tr></thead>
+      <tbody>
+        <tr><td><code>zipReader.js</code></td><td>ZIP/JAR 中央目录读取，STORE / DEFLATE / ZIP64，内存展开，zip-bomb 上限</td></tr>
+        <tr><td><code>classFile.js</code></td><td>Java class 常量池与注解属性解析，支持 modified UTF-8（CJK / surrogate pair）</td></tr>
+        <tr><td><code>annotations.js</code></td><td>Cucumber v1 / v2+ 注解分类；locale 采用泛型规则，不维护方言表</td></tr>
+        <tr><td><code>matcher.js</code></td><td>正则 + Cucumber Expression 双编译匹配，内置与自定义 ParameterType</td></tr>
+        <tr><td><code>jarScanner.js</code> / <code>scanPool.js</code></td><td>单 JAR 扫描；worker_threads 有界并发与超时终止</td></tr>
+        <tr><td><code>cache.js</code></td><td>磁盘缓存，以 size + mtimeMs 做 JAR 身份校验，原子写</td></tr>
+        <tr><td><code>classpath.js</code> / <code>refresh.js</code></td><td>Java LS / Maven / Gradle / 手动 roots 发现；依赖变更增量刷新</td></tr>
+        <tr><td><code>providers/*</code></td><td>Definition / Reference / Completion / 虚拟文档 / Diagnostics</td></tr>
+      </tbody>
+    </table>
+
+    <h3>注解兼容</h3>
+    <table>
+      <thead><tr><th>类别</th><th>示例</th><th>处理</th></tr></thead>
+      <tbody>
+        <tr><td>v1 step</td><td><code>cucumber.api.java.en.Given</code></td><td>step definition</td></tr>
+        <tr><td>v2+ step</td><td><code>io.cucumber.java.en.When</code></td><td>step definition</td></tr>
+        <tr><td>本地化 step</td><td><code>io.cucumber.java.zh_cn.假如</code></td><td>按 locale 泛型识别，无需方言表</td></tr>
+        <tr><td>hook</td><td><code>Before</code> / <code>AfterStep</code> / <code>BeforeAll</code></td><td>hook 定义</td></tr>
+        <tr><td>元数据</td><td><code>ParameterType</code> / <code>DataTableType</code></td><td>注册参数类型 / 记录 Glue 元数据</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="install">
+    <h2>安装与构建</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>用户安装</h3>
+        <p>推荐直接从 Marketplace 安装：</p>
+        <pre><code>扩展 ID: se-cli.cucumber-jar-glue</code></pre>
+        <p>也可下载 Release 里的 VSIX 离线安装：</p>
+        <pre><code>code --install-extension cucumber-jar-glue-0.1.0.vsix --force</code></pre>
+      </div>
+      <div class="card">
+        <h3>本地开发</h3>
+        <pre><code>npm test
+npm run package
+code --extensionDevelopmentPath=D:\code\cucumber-for-Java</code></pre>
+        <p>运行时零 npm 依赖；测试使用 Node 内置 <code>node:test</code>。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="usage">
+    <h2>使用说明</h2>
+    <h3>命令</h3>
+    <table>
+      <thead><tr><th>命令</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>Cucumber: Refresh Jar Glue Index</code></td><td>强制重建索引</td></tr>
+        <tr><td><code>Cucumber: Clear Jar Glue Cache</code></td><td>清空磁盘缓存并重建</td></tr>
+        <tr><td><code>Cucumber: Show Glue Index</code></td><td>列出定义并跳转</td></tr>
+      </tbody>
+    </table>
+
+    <h3>classpath 发现顺序</h3>
+    <table>
+      <thead><tr><th>顺序</th><th>来源</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Java 语言服务器</td><td><code>java.project.getAll</code> 取项目 URI，再调 <code>java.project.getClasspaths</code>，优先 test scope</td></tr>
+        <tr><td>2</td><td>Maven</td><td><code>mvn dependency:build-classpath</code></td></tr>
+        <tr><td>3</td><td>Gradle</td><td>临时 init script 打印 runtimeClasspath，不改构建文件</td></tr>
+        <tr><td>4</td><td>手动 roots</td><td><code>cucumberGlue.classpathRoots</code> glob</td></tr>
+      </tbody>
+    </table>
+
+    <h3>主要配置</h3>
+    <table>
+      <thead><tr><th>配置</th><th>默认</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>cucumberGlue.enabled</code></td><td><code>true</code></td><td>总开关</td></tr>
+        <tr><td><code>cucumberGlue.classpathProvider</code></td><td><code>auto</code></td><td>auto / java / maven / gradle / manual</td></tr>
+        <tr><td><code>cucumberGlue.maxJarSizeMb</code></td><td><code>80</code></td><td>超过则跳过该 JAR</td></tr>
+        <tr><td><code>cucumberGlue.maxClassEntriesPerJar</code></td><td><code>8000</code></td><td>单 JAR 解析上限</td></tr>
+        <tr><td><code>cucumberGlue.maxWorkers</code></td><td><code>4</code></td><td>扫描线程上限</td></tr>
+        <tr><td><code>cucumberGlue.excludePackages</code></td><td>见 package.json</td><td>不解析的包前缀</td></tr>
+        <tr><td><code>cucumberGlue.diagnostics.undefined</code></td><td><code>warning</code></td><td>未定义步骤级别</td></tr>
+      </tbody>
+    </table>
+
+    <h3>错误提示与性能控制</h3>
+    <p>状态栏显示定义数与 JAR 数；输出通道记录每个 JAR 的耗时、跳过原因和损坏条目。扫描跑在 worker_threads 中，单 JAR 超时终止并替换 worker；危险正则（嵌套量词）直接拒绝；JAR 大小、条目数、解压大小均有上限。任何单个 JAR 失败都不会阻止扩展激活。</p>
+  </section>
+
+  <section id="limits">
+    <h2>边界与限制</h2>
+    <div class="note">
+      <strong>跳转 JAR 内定义打开的是声明视图，不是反编译源码。</strong>它由 .class 元数据生成，包含注解、类名、方法签名与参数个数，用于导航和引用查找；方法体不可见。
+    </div>
+    <div class="note danger" style="margin-top:12px">
+      <strong>匹配不是 Cucumber 运行时的完整实现。</strong>覆盖常用 Cucumber Expression 子集（参数类型、可选文本、alternation）和 Java 正则；运行时自定义 transformer 的语义不解析。
+    </div>
+    <p style="margin-top:16px">其他已知边界：仅支持 Java 项目中的 Glue 索引；Java 语言服务器未就绪或项目尚未导入时，classpath 请求可能得不到响应；Gradle 回退依赖临时 init script，复杂多项目构建需要实际验证。</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>
+      <a href="https://github.com/se-cli/cucumber-jar-glue">源码</a> ·
+      <a href="https://github.com/se-cli/cucumber-jar-glue/releases/tag/v0.1.0">Release v0.1.0</a> ·
+      <a href="https://marketplace.visualstudio.com/items?itemName=se-cli.cucumber-jar-glue">Marketplace</a> ·
+      <a href="https://github.com/se-cli/cucumber-jar-glue/blob/main/README.md">README</a>
+    </p>
+    <p>Apache-2.0 · 由 se-cli 组织维护</p>
+  </div>
+</footer>
+</body>
+</html>
