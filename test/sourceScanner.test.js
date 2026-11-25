@@ -55,3 +55,58 @@ test('indexes workspace Java glue with source positions', () => {
     fs.rmdirSync(dir);
   }
 });
+
+test('parses method name when parameter annotations contain nested parentheses', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cucumber-source-nested-'));
+  const file = path.join(dir, 'ArtifactoryVersionGlue.java');
+  fs.writeFileSync(file, [
+    'package com.acme;',
+    'import io.cucumber.java.en.When;',
+    'import io.cucumber.java.Transform;',
+    'public class ArtifactoryVersionGlue {',
+    '  @When("version is not less than {artVersion}")',
+    '  public void assertVersionNotLessThanPersisted(',
+    '      @Transform(value = "(^|\\\\.)(\\\\d+)", to = ArtifactVersion.class) String version,',
+    '      String expected) {',
+    '    if (version == null) { throw new IllegalArgumentException(); }',
+    '  }',
+    '}'
+  ].join('\n'));
+
+  try {
+    const result = scanJavaSource(file, { toString: () => `file://${file}` });
+    const step = result.definitions.find(d => d.kind === 'step');
+    assert.ok(step, 'the @When step must be indexed');
+    assert.equal(step.methodName, 'assertVersionNotLessThanPersisted');
+    assert.equal(step.descriptor, '(Ljava/lang/Object;Ljava/lang/Object;)V');
+    assert.ok(!result.definitions.some(d => d.methodName === 'if'), 'if must not become a method');
+  } finally {
+    fs.unlinkSync(file);
+    fs.rmdirSync(dir);
+  }
+});
+
+test('skips annotations with nested parentheses before the method declaration', () => {
+  const text = '@Given(value = "x", from = foo(bar(1))) public void realMethod(String s) { if (s == null) { return; } }';
+  const calls = annotationCalls(text);
+  assert.equal(calls.length, 1);
+  assert.deepEqual(stringValues(calls[0].args), ['x']);
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cucumber-source-anno-'));
+  const file = path.join(dir, 'Steps.java');
+  fs.writeFileSync(file, [
+    'package com.acme;',
+    'import io.cucumber.java.en.Given;',
+    'public class Steps {',
+    '  @Given(value = "x", from = foo(bar(1)))',
+    '  public void realMethod(String s) { if (s == null) { return; } }',
+    '}'
+  ].join('\n'));
+  try {
+    const result = scanJavaSource(file, { toString: () => `file://${file}` });
+    assert.equal(result.definitions[0].methodName, 'realMethod');
+  } finally {
+    fs.unlinkSync(file);
+    fs.rmdirSync(dir);
+  }
+});

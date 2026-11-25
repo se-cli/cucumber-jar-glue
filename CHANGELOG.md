@@ -1,5 +1,10 @@
 # Changelog / 更新日志
 
+## 0.1.3
+
+- **中文**：修复重复 Glue 定义与方法名误判。源码扫描统一排除 `.local-state/temporal/runs/` 等历史运行快照目录，刷新、枚举和文件监听使用同一规则，避免 31 份历史副本被当成 31 个定义。重写方法签名解析，正确处理参数中的 `@Transform(...)` 等嵌套括号，不再把方法体里的 `if (...)` 错认成方法，方法名恢复为 `assertVersionNotLessThanPersisted`。
+- **English**: Fixed duplicate glue definitions and misidentified method names. Source scanning now consistently excludes historical run snapshots such as `.local-state/temporal/runs/` across refresh, enumeration and file watchers, so 31 archived copies no longer become 31 definitions. Method signature parsing was rewritten to handle nested parentheses in parameter annotations like `@Transform(...)`, instead of mistaking a body `if (...)` for the method; the method name is now correctly `assertVersionNotLessThanPersisted`.
+
 ## 0.1.2
 
 - **中文**：修复多模块项目支持。Java 语言服务器现在聚合工作区内所有匹配子模块项目的 classpath，而不再只匹配工作区根目录或第一个项目；Maven 回退改为按模块分别写 classpath 输出再合并，避免最后一个模块覆盖先前结果。子模块 `pom.xml` 变化也会触发快照失效。

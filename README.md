@@ -25,6 +25,8 @@ Marketplace：https://marketplace.visualstudio.com/items?itemName=se-cli.cucumbe
 | 兼容性 | Cucumber-JVM v1 (`cucumber.api.java.*`) 与 v2+ (`io.cucumber.java.*`)，含任意 locale 的本地化注解 |
 | 编辑器兼容 | 同时绑定 `gherkin` 与 `cucumber` language id，并兜底 `**/*.feature`，兼容 Cucumber 官方扩展 |
 | 多模块项目 | 聚合工作区内所有子模块项目的 classpath；Maven 回退按模块输出后合并 |
+| 源码扫描 | 排除 `.local-state` 等历史运行快照目录，刷新与文件监听共用规则 |
+| 签名解析 | 正确处理参数中 `@Transform(...)` 的嵌套括号，不把方法体的 `if` 误当方法名 |
 | 匹配 | Java 正则 + Cucumber Expression 子集；支持发现的自定义 `ParameterType` |
 
 跳转 JAR 内定义时打开的是 `cucumber-glue:` **只读声明视图**（注解、类名、方法签名），不是反编译后的源码。方法体仍需 Java 反编译器扩展。
@@ -40,7 +42,7 @@ Marketplace：https://marketplace.visualstudio.com/items?itemName=se-cli.cucumbe
 或从 Release 下载 VSIX 离线安装：
 
 ```bash
-code --install-extension cucumber-jar-glue-0.1.2.vsix --force
+code --install-extension cucumber-jar-glue-0.1.3.vsix --force
 ```
 
 开发调试：
@@ -118,6 +120,8 @@ This extension fills the gap for Gherkin steps whose glue lives inside dependenc
 | Compatibility | Cucumber-JVM v1 (`cucumber.api.java.*`) and v2+ (`io.cucumber.java.*`), including localized annotations in any locale |
 | Editor compatibility | Binds both `gherkin` and `cucumber` language ids, with a `**/*.feature` fallback for the official Cucumber extension |
 | Multi-module projects | Aggregates classpaths from every module project in the workspace; the Maven fallback merges per-module outputs |
+| Source scanning | Skips historical run snapshots such as `.local-state`, with one shared rule for refresh and file watchers |
+| Signature parsing | Handles nested parentheses in parameter annotations like `@Transform(...)` without mistaking a body `if` for the method |
 | Matching | Java regex plus a Cucumber Expression subset; discovers custom `ParameterType`s |
 
 Navigating to a JAR definition opens a `cucumber-glue:` **read-only declaration view** (annotation, class name, method signature), not decompiled source. Method bodies still require a Java decompiler extension.
@@ -133,7 +137,7 @@ Extension ID: se-cli.cucumber-jar-glue
 Or download the VSIX from the release and install offline:
 
 ```bash
-code --install-extension cucumber-jar-glue-0.1.2.vsix --force
+code --install-extension cucumber-jar-glue-0.1.3.vsix --force
 ```
 
 For development:

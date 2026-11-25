@@ -7,6 +7,20 @@ const { STEP_KEYWORDS } = require('./matcher');
 
 const KNOWN_STEP_KEYWORDS = new Set(STEP_KEYWORDS.flat());
 
+// Keep refreshes, explicit scans and file watchers on the same rule set.
+// Historical run snapshots (e.g. .local-state/temporal/runs/) contain copies
+// of glue sources and would otherwise create duplicate definitions.
+const IGNORED_DIRS = [
+  'target', 'build', 'out', '.gradle', '.local-state',
+  'node_modules', '.git', '.idea', '.vscode', 'bin'
+];
+const SOURCE_EXCLUDE_GLOB = `**/{${IGNORED_DIRS.join(',')}}/**`;
+
+function isIgnoredPath(filePath) {
+  const normalized = String(filePath || '').replace(/\\/g, '/');
+  return normalized.split('/').some(segment => IGNORED_DIRS.includes(segment));
+}
+
 function unescapeJavaString(body) {
   return body.replace(/\\(u[0-9a-fA-F]{4}|.)/g, (_m, g) => {
     if (g[0] === 'u') return String.fromCharCode(parseInt(g.slice(1), 16));
@@ -112,20 +126,156 @@ function resolveAnnotation(name, imports, extraPrefixes) {
   return undefined;
 }
 
-function methodAfter(text, offset) {
-  const tail = text.slice(offset, offset + 1200);
-  const m = /(?:\b(?:public|private|protected|static|final|synchronized|default)\s+)*[\w.<>\[\],?\s]+\s+([A-Za-z_$][\w$]*)\s*\([^;{)]*\)\s*(?:throws\s+[\w.,\s]+)?\{/.exec(tail);
-  if (!m) return { name: '<unknown>', descriptor: '', offset };
-  const paren = tail.indexOf('(', m.index);
-  let depth = 0;
-  let end = paren;
-  for (; end < tail.length; end++) {
-    if (tail[end] === '(') depth++;
-    else if (tail[end] === ')') { depth--; if (depth === 0) { end++; break; } }
+const CONTROL_KEYWORDS = new Set([
+  'if', 'for', 'while', 'switch', 'catch', 'return', 'new', 'super', 'this',
+  'try', 'do', 'else', 'case', 'throw', 'assert', 'instanceof'
+]);
+
+function skipQuoted(text, i, limit) {
+  const ch = text[i];
+  if (ch === '"' && text.slice(i, i + 3) === '"""') {
+    i += 3;
+    while (i < limit && text.slice(i, i + 3) !== '"""') i++;
+    return Math.min(i + 3, limit);
   }
-  const params = tail.slice(paren + 1, end - 1).replace(/\s+/g, '');
-  const descriptor = `(${params.split(',').filter(Boolean).map(() => 'Ljava/lang/Object;').join('')})V`;
-  return { name: m[1], descriptor, offset: offset + paren };
+  i++;
+  while (i < limit) {
+    if (text[i] === '\\') { i += 2; continue; }
+    if (text[i] === ch) return i + 1;
+    i++;
+  }
+  return i;
+}
+
+function skipComment(text, i, limit) {
+  if (text[i] === '/' && text[i + 1] === '/') {
+    i += 2;
+    while (i < limit && text[i] !== '\n') i++;
+    return i;
+  }
+  if (text[i] === '/' && text[i + 1] === '*') {
+    i += 2;
+    while (i < limit && !(text[i] === '*' && text[i + 1] === '/')) i++;
+    return Math.min(i + 2, limit);
+  }
+  return i;
+}
+
+// Consume @Name(...) including nested parentheses, strings and comments.
+function skipAnnotation(text, i, limit) {
+  i++;
+  while (i < limit && /[\w.$]/.test(text[i])) i++;
+  while (i < limit && /\s/.test(text[i])) i++;
+  if (text[i] !== '(') return i;
+  let depth = 0;
+  while (i < limit) {
+    const ch = text[i];
+    if (ch === '"' || ch === "'") { i = skipQuoted(text, i, limit); continue; }
+    if (ch === '/' && (text[i + 1] === '/' || text[i + 1] === '*')) {
+      i = skipComment(text, i, limit);
+      continue;
+    }
+    if (ch === '(') depth++;
+    else if (ch === ')') {
+      depth--;
+      i++;
+      if (depth === 0) break;
+      continue;
+    }
+    i++;
+  }
+  return i;
+}
+
+function balancedEnd(text, open, limit) {
+  let depth = 0;
+  for (let i = open; i < limit; i++) {
+    const ch = text[i];
+    if (ch === '"' || ch === "'") { i = skipQuoted(text, i, limit) - 1; continue; }
+    if (ch === '/' && (text[i + 1] === '/' || text[i + 1] === '*')) {
+      i = skipComment(text, i, limit) - 1;
+      continue;
+    }
+    if (ch === '(') depth++;
+    else if (ch === ')') {
+      depth--;
+      if (depth === 0) return i + 1;
+    }
+  }
+  return -1;
+}
+
+function splitTopLevel(text, separator) {
+  const parts = [];
+  let start = 0;
+  let depth = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"' || ch === "'") { i = skipQuoted(text, i, text.length) - 1; continue; }
+    if (ch === '/' && (text[i + 1] === '/' || text[i + 1] === '*')) {
+      i = skipComment(text, i, text.length) - 1;
+      continue;
+    }
+    if (ch === '(' || ch === '[' || ch === '{' || ch === '<') depth++;
+    else if (ch === ')' || ch === ']' || ch === '}' || ch === '>') depth--;
+    else if (ch === separator && depth === 0) {
+      parts.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start));
+  return parts.filter(part => part.trim());
+}
+
+function descriptorFromParams(params) {
+  const count = splitTopLevel(params, ',').length;
+  return `(${Array(count).fill('Ljava/lang/Object;').join('')})V`;
+}
+
+// Lexical scan from the end of a glue annotation to the following method
+// declaration. Annotations and parameter annotations may contain nested
+// parentheses; control-flow statements inside the body must never be mistaken
+// for the method name.
+function methodAfter(text, offset) {
+  const limit = Math.min(text.length, offset + 4000);
+  let i = offset;
+  let token = '';
+  while (i < limit) {
+    const ch = text[i];
+    if (ch === '"' || ch === "'") { i = skipQuoted(text, i, limit); token = ''; continue; }
+    if (ch === '/' && (text[i + 1] === '/' || text[i + 1] === '*')) {
+      i = skipComment(text, i, limit);
+      continue;
+    }
+    if (/\s/.test(ch)) { i++; continue; }
+    if (ch === '@') { i = skipAnnotation(text, i, limit); token = ''; continue; }
+    if (ch === ';' || ch === '{' || ch === '}') break;
+    if (ch === '(') {
+      const name = token;
+      if (!name || CONTROL_KEYWORDS.has(name)) { i++; token = ''; continue; }
+      const end = balancedEnd(text, i, limit);
+      if (end < 0) break;
+      const params = text.slice(i + 1, end - 1);
+      let j = end;
+      while (j < limit && /\s/.test(text[j])) j++;
+      if (text.slice(j, j + 6) === 'throws') {
+        j += 6;
+        while (j < limit && text[j] !== '{' && text[j] !== ';') j++;
+      }
+      while (j < limit && /\s/.test(text[j])) j++;
+      if (text[j] !== '{' && text[j] !== ';') { i = end; token = ''; continue; }
+      return { name, descriptor: descriptorFromParams(params), offset: offset + i };
+    }
+    if (/[A-Za-z_$0-9]/.test(ch)) {
+      let j = i;
+      while (j < limit && /[\w$]/.test(text[j])) j++;
+      token = text.slice(i, j);
+      i = j;
+      continue;
+    }
+    i++;
+  }
+  return { name: '<unknown>', descriptor: '', offset };
 }
 
 function scanJavaSource(filePath, uri, options = {}) {
@@ -179,13 +329,14 @@ function scanJavaSource(filePath, uri, options = {}) {
 
 async function scanWorkspaceSources(folder, config, log, token) {
   const pattern = new vscode.RelativePattern(folder, '**/*.java');
-  const uris = await vscode.workspace.findFiles(pattern, '**/{target,build,out,.gradle}/**', 20000);
+  const uris = await vscode.workspace.findFiles(pattern, SOURCE_EXCLUDE_GLOB, 20000);
   const definitions = [];
   const customTypes = new Map();
   const warnings = [];
   let files = 0;
   for (const uri of uris) {
     if (token && token.isCancellationRequested) break;
+    if (isIgnoredPath(uri.fsPath)) continue;
     try {
       const result = scanJavaSource(uri.fsPath, uri, config);
       definitions.push(...result.definitions);
@@ -200,4 +351,7 @@ async function scanWorkspaceSources(folder, config, log, token) {
   return { definitions, customTypes, warnings, files };
 }
 
-module.exports = { scanJavaSource, annotationCalls, stringValues, resolveAnnotation, scanWorkspaceSources };
+module.exports = {
+  scanJavaSource, annotationCalls, stringValues, resolveAnnotation,
+  scanWorkspaceSources, SOURCE_EXCLUDE_GLOB, isIgnoredPath
+};

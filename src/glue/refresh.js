@@ -5,7 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const { getClasspath } = require('./classpath');
 const { identityOf, identityMatches } = require('./cache');
-const { scanWorkspaceSources } = require('./sourceScanner');
+const {
+  scanWorkspaceSources, SOURCE_EXCLUDE_GLOB, isIgnoredPath
+} = require('./sourceScanner');
 const { stepTextFromLine } = require('./matcher');
 
 class RefreshCoordinator {
@@ -24,7 +26,7 @@ class RefreshCoordinator {
   }
 
   async rebuildUsages() {
-    const uris = await vscode.workspace.findFiles('**/*.feature', '**/{target,build,node_modules}/**', 5000);
+    const uris = await vscode.workspace.findFiles('**/*.feature', SOURCE_EXCLUDE_GLOB, 5000);
     const usages = [];
     for (const uri of uris) {
       try {
@@ -111,8 +113,9 @@ class RefreshCoordinator {
           grouped.get(def.fsPath).push(def);
         }
         for (const uri of await vscode.workspace.findFiles(
-          new vscode.RelativePattern(folder, '**/*.java'), '**/{target,build,out,.gradle}/**', 20000
+          new vscode.RelativePattern(folder, '**/*.java'), SOURCE_EXCLUDE_GLOB, 20000
         )) {
+          if (isIgnoredPath(uri.fsPath)) continue;
           seenSources.add(uri.fsPath);
           this.index.replaceSourceFile(uri.fsPath, uri, {
             definitions: grouped.get(uri.fsPath) || [],
@@ -149,25 +152,30 @@ class RefreshCoordinator {
       '**/pom.xml', '**/build.gradle', '**/build.gradle.kts',
       '**/settings.gradle', '**/settings.gradle.kts', '**/gradle.lockfile', '**/.classpath'
     ];
+    const scheduleIfIndexed = uri => {
+      if (!isIgnoredPath(uri.fsPath)) this.schedule();
+    };
     for (const glob of globs) {
       const watcher = vscode.workspace.createFileSystemWatcher(glob);
-      watcher.onDidChange(() => this.schedule());
-      watcher.onDidCreate(() => this.schedule());
-      watcher.onDidDelete(() => this.schedule());
+      watcher.onDidChange(scheduleIfIndexed);
+      watcher.onDidCreate(scheduleIfIndexed);
+      watcher.onDidDelete(scheduleIfIndexed);
       this.disposables.push(watcher);
     }
     const featureWatcher = vscode.workspace.createFileSystemWatcher('**/*.feature');
-    featureWatcher.onDidCreate(() => this.schedule());
-    featureWatcher.onDidDelete(() => this.schedule());
+    featureWatcher.onDidCreate(scheduleIfIndexed);
+    featureWatcher.onDidDelete(scheduleIfIndexed);
     this.disposables.push(featureWatcher);
 
     const javaWatcher = vscode.workspace.createFileSystemWatcher('**/*.java');
     javaWatcher.onDidChange(uri => {
+      if (isIgnoredPath(uri.fsPath)) return;
       const result = require('./sourceScanner').scanJavaSource(uri.fsPath, uri, this.configRef());
       this.index.replaceSourceFile(uri.fsPath, uri, result);
       if (this.onUpdated) this.onUpdated();
     });
     javaWatcher.onDidDelete(uri => {
+      if (isIgnoredPath(uri.fsPath)) return;
       this.index.removeSourceFile(uri.fsPath);
       if (this.onUpdated) this.onUpdated();
     });
