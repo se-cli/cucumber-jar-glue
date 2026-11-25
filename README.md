@@ -17,6 +17,7 @@ Marketplace：https://marketplace.visualstudio.com/items?itemName=se-cli.cucumbe
 | 补全 | 输入步骤时提示 JAR + 源码中的 step pattern，标注来源 |
 | 诊断 | 未定义步骤、等价多定义警告 |
 | 兼容性 | Cucumber-JVM v1 (`cucumber.api.java.*`) 与 v2+ (`io.cucumber.java.*`)，含任意 locale 的本地化注解 |
+| 编辑器兼容 | 同时绑定 `gherkin` 与 `cucumber` language id，并兜底 `**/*.feature`，兼容 Cucumber 官方扩展 |
 | 匹配 | Java 正则 + Cucumber Expression 子集；支持发现的自定义 `ParameterType` |
 
 跳转 JAR 内定义时打开的是 `cucumber-glue:` **只读声明视图**（注解、类名、方法签名），不是反编译后的源码。方法体仍需 Java 反编译器扩展。

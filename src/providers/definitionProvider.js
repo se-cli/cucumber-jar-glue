@@ -3,6 +3,7 @@
 const vscode = require('vscode');
 const { stepTextFromLine } = require('../glue/matcher');
 const { SCHEME } = require('../util/uri');
+const { DOCUMENT_SELECTOR } = require('../util/gherkin');
 
 function locationLinkFor(def, virtual, originRange) {
   let uri;
@@ -27,7 +28,7 @@ function locationLinkFor(def, virtual, originRange) {
 
 function registerDefinitionProvider(index, virtual) {
   return vscode.languages.registerDefinitionProvider(
-    [{ language: 'gherkin', scheme: 'file' }],
+    DOCUMENT_SELECTOR,
     {
       provideDefinition(document, position) {
         const step = stepTextFromLine(document.lineAt(position.line).text);

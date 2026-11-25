@@ -13,6 +13,7 @@ const { RefreshCoordinator } = require('./glue/refresh');
 const { stepTextFromLine } = require('./glue/matcher');
 const { probeJavaClasspath } = require('./glue/classpath');
 const { SCHEME } = require('./util/uri');
+const { isGherkinDocument } = require('./util/gherkin');
 
 const { GlueVirtualDocumentProvider } = require('./providers/virtualDocument');
 const definition = require('./providers/definitionProvider');
@@ -141,13 +142,13 @@ async function activate(context) {
     references.register(index, virtual),
     completion.register(index),
     vscode.workspace.onDidOpenTextDocument(doc => {
-      if (doc.languageId === 'gherkin') {
+      if (isGherkinDocument(doc)) {
         index.upsertUsages(doc.uri.toString(), usagesFromDocument(doc));
         diagnostics.schedule(doc);
       }
     }),
     vscode.workspace.onDidChangeTextDocument(event => {
-      if (event.document.languageId === 'gherkin') {
+      if (isGherkinDocument(event.document)) {
         index.upsertUsages(event.document.uri.toString(), usagesFromDocument(event.document));
         diagnostics.schedule(event.document);
       }

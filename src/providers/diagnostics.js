@@ -2,6 +2,7 @@
 
 const vscode = require('vscode');
 const { stepTextFromLine } = require('../glue/matcher');
+const { isGherkinDocument } = require('../util/gherkin');
 
 function severityOf(value, fallback) {
   if (value === 'off') return undefined;
@@ -19,7 +20,7 @@ class Diagnostics {
   }
 
   updateDocument(document) {
-    if (document.languageId !== 'gherkin' || !document.uri.fsPath.endsWith('.feature')) return;
+    if (!isGherkinDocument(document)) return;
     const config = this.configRef();
     const undefinedSeverity = severityOf(config.diagnostics.undefined, vscode.DiagnosticSeverity.Warning);
     const ambiguousSeverity = severityOf(config.diagnostics.ambiguous, vscode.DiagnosticSeverity.Information);

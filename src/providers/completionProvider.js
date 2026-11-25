@@ -3,6 +3,7 @@
 const vscode = require('vscode');
 const path = require('path');
 const { stepTextFromLine } = require('../glue/matcher');
+const { DOCUMENT_SELECTOR } = require('../util/gherkin');
 
 function describe(def) {
   if (def.source === 'jar') {
@@ -13,7 +14,7 @@ function describe(def) {
 
 function register(index) {
   return vscode.languages.registerCompletionItemProvider(
-    [{ language: 'gherkin', scheme: 'file' }],
+    DOCUMENT_SELECTOR,
     {
       provideCompletionItems(document, position, token) {
         const line = document.lineAt(position.line).text;

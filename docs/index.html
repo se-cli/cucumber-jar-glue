@@ -161,6 +161,9 @@
       <div class="card"><h3>增量更新</h3><p>监听 pom.xml / build.gradle* / .classpath 变化，重算 classpath 后只扫描新增或身份变化的 JAR。</p></div>
       <div class="card"><h3>参数类型</h3><p>识别 ParameterType 的 name 与 regexp，让自定义 Cucumber Expression 参数类型参与匹配。</p></div>
     </div>
+    <div class="note" style="margin-top:14px">
+      <strong>编辑器兼容：</strong>同时绑定 <code>gherkin</code> 与 <code>cucumber</code> language id，并以 <code>**/*.feature</code> 兜底。Cucumber 官方扩展把 <code>.feature</code> 注册为 <code>cucumber</code>，两种语言 ID 下跳转、引用、补全和诊断都可用。
+    </div>
   </section>
 
   <section id="architecture">

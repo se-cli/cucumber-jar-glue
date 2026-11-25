@@ -3,6 +3,7 @@
 const vscode = require('vscode');
 const { stepTextFromLine } = require('../glue/matcher');
 const { SCHEME, parseGlueUri } = require('../util/uri');
+const { DOCUMENT_SELECTOR } = require('../util/gherkin');
 const { locationLinkFor } = require('./definitionProvider');
 
 function usageLocation(usage) {
@@ -42,7 +43,7 @@ function register(index, virtual) {
     }
   };
   return vscode.languages.registerReferenceProvider(
-    [{ language: 'gherkin', scheme: 'file' }, { scheme: SCHEME }], provider
+    [...DOCUMENT_SELECTOR, { scheme: SCHEME }], provider
   );
 }
 
