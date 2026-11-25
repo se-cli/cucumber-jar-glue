@@ -1,5 +1,10 @@
 # Changelog / 更新日志
 
+## 0.1.4
+
+- **中文**：新增 `Cucumber: Open Decompiled Source (JAR Glue)` 命令（`Ctrl/Cmd+Alt+D`）。在 Gherkin 步骤或声明视图方法上执行，即可从 JAR 提取对应 `.class`、调用 Java 语言服务器的 `java.decompile`，以只读虚拟文档打开反编译源码；无可用反编译器时回退打开 `.class` 并提示。
+- **English**: Added the `Cucumber: Open Decompiled Source (JAR Glue)` command (`Ctrl/Cmd+Alt+D`). From a Gherkin step or a declaration-view method it extracts the matching `.class` from the JAR, calls the Java language server's `java.decompile`, and opens the decompiled source in a read-only virtual document. Without a decompiler it falls back to opening the `.class` file with a warning.
+
 ## 0.1.3
 
 - **中文**：修复重复 Glue 定义与方法名误判。源码扫描统一排除 `.local-state/temporal/runs/` 等历史运行快照目录，刷新、枚举和文件监听使用同一规则，避免 31 份历史副本被当成 31 个定义。重写方法签名解析，正确处理参数中的 `@Transform(...)` 等嵌套括号，不再把方法体里的 `if (...)` 错认成方法，方法名恢复为 `assertVersionNotLessThanPersisted`。

@@ -2,7 +2,7 @@
   "name": "cucumber-jar-glue",
   "displayName": "Cucumber Jar Glue Index",
   "description": "Index Cucumber Java glue (step definitions, hooks, parameter types) inside dependency JARs without extracting them, and merge it with workspace source for Gherkin navigation.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "se-cli",
   "license": "Apache-2.0",
   "icon": "media/icon.png",
@@ -41,13 +41,23 @@
     "workspaceContains:**/build.gradle.kts",
     "onCommand:cucumberGlue.refresh",
     "onCommand:cucumberGlue.clearCache",
-    "onCommand:cucumberGlue.showIndex"
+    "onCommand:cucumberGlue.showIndex",
+    "onCommand:cucumberGlue.openDecompiledSource"
   ],
   "contributes": {
     "commands": [
       { "command": "cucumberGlue.refresh", "title": "Cucumber: Refresh Jar Glue Index" },
       { "command": "cucumberGlue.clearCache", "title": "Cucumber: Clear Jar Glue Cache" },
-      { "command": "cucumberGlue.showIndex", "title": "Cucumber: Show Glue Index" }
+      { "command": "cucumberGlue.showIndex", "title": "Cucumber: Show Glue Index" },
+      { "command": "cucumberGlue.openDecompiledSource", "title": "Cucumber: Open Decompiled Source (JAR Glue)" }
+    ],
+    "keybindings": [
+      {
+        "command": "cucumberGlue.openDecompiledSource",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d",
+        "when": "editorTextFocus && (resourceLangId == 'gherkin' || resourceLangId == 'cucumber' || resourceScheme == 'cucumber-glue')"
+      }
     ],
     "configuration": {
       "title": "Cucumber Jar Glue",

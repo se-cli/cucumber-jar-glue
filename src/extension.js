@@ -12,6 +12,9 @@ const { ScanPool } = require('./glue/scanPool');
 const { RefreshCoordinator } = require('./glue/refresh');
 const { stepTextFromLine } = require('./glue/matcher');
 const { probeJavaClasspath } = require('./glue/classpath');
+const {
+  DecompiledDocumentProvider, DECOMPILED_SCHEME
+} = require('./glue/decompiledSource');
 const { SCHEME } = require('./util/uri');
 const { isGherkinDocument } = require('./util/gherkin');
 
@@ -60,6 +63,32 @@ function openDefinition(def) {
   });
 }
 
+async function definitionForDecompile() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return undefined;
+  const doc = editor.document;
+  const line = editor.selection.active.line;
+
+  if (doc.uri.scheme === SCHEME) {
+    return runtime.virtual.definitionAt(doc.uri, line);
+  }
+  if (isGherkinDocument(doc)) {
+    const step = stepTextFromLine(doc.lineAt(line).text);
+    if (!step || !step.text) return undefined;
+    const matches = runtime.index.findDefinitions(step.text)
+      .filter(m => m.definition.source === 'jar');
+    if (!matches.length) return undefined;
+    if (matches.length === 1) return matches[0].definition;
+    const picked = await vscode.window.showQuickPick(matches.map(m => ({
+      label: `${path.basename(m.definition.jarPath)}!${m.definition.className}.${m.definition.methodName}`,
+      description: m.definition.annotation,
+      definition: m.definition
+    })), { placeHolder: '选择要反编译的 JAR Glue 定义' });
+    return picked && picked.definition;
+  }
+  return undefined;
+}
+
 function registerCommands(context) {
   context.subscriptions.push(
     vscode.commands.registerCommand('cucumberGlue.refresh', async () => {
@@ -81,6 +110,19 @@ function registerCommands(context) {
       }));
       const picked = await vscode.window.showQuickPick(items, { placeHolder: 'Cucumber Glue 定义索引' });
       if (picked) await openDefinition(picked.def);
+    }),
+    vscode.commands.registerCommand('cucumberGlue.openDecompiledSource', async () => {
+      const def = await definitionForDecompile();
+      if (!def) {
+        vscode.window.showWarningMessage('请把光标放在 Gherkin 步骤或 Glue 声明视图的方法上，再执行反编译。');
+        return;
+      }
+      try {
+        await runtime.decompiled.open(def, context.globalStorageUri.fsPath, runtime.log);
+      } catch (err) {
+        runtime.log.error('openDecompiledSource', err);
+        vscode.window.showErrorMessage(`反编译失败：${err.message}`);
+      }
     })
   );
 }
@@ -123,6 +165,7 @@ async function activate(context) {
   const cache = new CacheStore(context.globalStorageUri.fsPath);
   const pool = new ScanPool(configRef, log);
   const virtual = new GlueVirtualDocumentProvider(index);
+  const decompiled = new DecompiledDocumentProvider();
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   const diagnostics = new Diagnostics(index, configRef);
   const refresh = new RefreshCoordinator(context, configRef, index, cache, pool, log, () => {
@@ -131,12 +174,13 @@ async function activate(context) {
     updateStatus();
   });
 
-  runtime = { configRef, log, index, cache, pool, virtual, status, diagnostics, refresh };
+  runtime = { configRef, log, index, cache, pool, virtual, decompiled, status, diagnostics, refresh };
   status.command = 'cucumberGlue.showIndex';
 
   context.subscriptions.push(
-    status, log, virtual, diagnostics,
+    status, log, virtual, decompiled, diagnostics,
     vscode.workspace.registerTextDocumentContentProvider(SCHEME, virtual),
+    vscode.workspace.registerTextDocumentContentProvider(DECOMPILED_SCHEME, decompiled),
     definition.registerDefinitionProvider(index, virtual),
     definition.registerGlueSelfDefinition(index, virtual),
     references.register(index, virtual),

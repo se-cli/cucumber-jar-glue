@@ -42,7 +42,7 @@ Marketplace：https://marketplace.visualstudio.com/items?itemName=se-cli.cucumbe
 或从 Release 下载 VSIX 离线安装：
 
 ```bash
-code --install-extension cucumber-jar-glue-0.1.3.vsix --force
+code --install-extension cucumber-jar-glue-0.1.4.vsix --force
 ```
 
 开发调试：
@@ -70,6 +70,9 @@ code --extensionDevelopmentPath=D:\code\cucumber-for-Java
 | `Cucumber: Refresh Jar Glue Index` | 强制重建索引 |
 | `Cucumber: Clear Jar Glue Cache` | 清空磁盘缓存并重建 |
 | `Cucumber: Show Glue Index` | 列出当前索引的定义并跳转 |
+| `Cucumber: Open Decompiled Source (JAR Glue)` | 从当前步骤或声明视图方法一键打开 JAR 内 Glue 的反编译源码（`Ctrl/Cmd+Alt+D`） |
+
+> JAR 定义默认打开的是只读声明视图（注解、类名、方法签名），不含方法体。需要看实现时用上面的“Open Decompiled Source”命令；它调用 Java 语言服务器的 `java.decompile`，因此要安装/配置 Java 反编译器（如 Fernflower/CFR/Procyon 扩展），或为依赖附加 sources JAR。没有可用反编译器时会直接打开 `.class` 文件并提示。
 
 ### 主要配置
 
@@ -137,7 +140,7 @@ Extension ID: se-cli.cucumber-jar-glue
 Or download the VSIX from the release and install offline:
 
 ```bash
-code --install-extension cucumber-jar-glue-0.1.3.vsix --force
+code --install-extension cucumber-jar-glue-0.1.4.vsix --force
 ```
 
 For development:
@@ -165,6 +168,9 @@ Changes to `pom.xml`, `build.gradle*`, `.classpath` or `gradle.lockfile` trigger
 | `Cucumber: Refresh Jar Glue Index` | Force a full index rebuild |
 | `Cucumber: Clear Jar Glue Cache` | Clear the disk cache and rebuild |
 | `Cucumber: Show Glue Index` | List indexed definitions and navigate to one |
+| `Cucumber: Open Decompiled Source (JAR Glue)` | Open the decompiled source of the JAR glue under the cursor / in the declaration view (`Ctrl/Cmd+Alt+D`) |
+
+> JAR definitions open a read-only declaration view (annotations, class name, method signature) with no method body. Use "Open Decompiled Source" to see the implementation: it calls the Java language server's `java.decompile`, so a Java decompiler extension (Fernflower/CFR/Procyon) or an attached sources JAR is required. Without one, the raw `.class` file is opened with a warning.
 
 ### Key settings
 
