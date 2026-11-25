@@ -143,6 +143,103 @@ test('locationFor prepares content and caches repeated navigation', async () => 
   }
 });
 
+test('locates the method declaration instead of the file top', () => {
+  const { findMethodLocation, descriptorParams } = loadModule({});
+  const text = [
+    'package com.acme;',
+    '',
+    'public class ArtifactoryVersionGlue {',
+    '   @Then("the version is not less than the persisted version")',
+    '   public void assertVersionNotLessThanPersisted(String expected, long actual) {',
+    '      if (expected.isEmpty()) {',
+    '         throw new IllegalStateException("empty");',
+    '      }',
+    '      assertVersionNotLessThanPersisted(expected, actual);',
+    '   }',
+    '}'
+  ].join('\n');
+
+  const loc = findMethodLocation(text, {
+    methodName: 'assertVersionNotLessThanPersisted',
+    descriptor: '(Ljava/lang/String;J)V'
+  });
+  assert.deepEqual(descriptorParams('(Ljava/lang/String;J)V'), [
+    { name: 'String', dims: 0 },
+    { name: 'long', dims: 0 }
+  ]);
+  assert.ok(loc, 'method declaration must be found');
+  assert.equal(loc.line, 4, 'must land on the declaration, not the recursive call');
+  assert.equal(loc.character, '   public void '.length);
+  assert.equal(loc.length, 'assertVersionNotLessThanPersisted'.length);
+  assert.equal(findMethodLocation(text, { methodName: 'missing' }), undefined);
+});
+
+test('picks the overload that matches the descriptor arity', () => {
+  const { findMethodLocation } = loadModule({});
+  const text = [
+    'public class Glue {',
+    '   public void check(String value) {',
+    '      check(value, 1);',
+    '   }',
+    '   public void check(String value, int retries) {',
+    '      check(value, retries);',
+    '   }',
+    '}'
+  ].join('\n');
+
+  const two = findMethodLocation(text, {
+    methodName: 'check',
+    descriptor: '(Ljava/lang/String;I)V'
+  });
+  assert.equal(two.line, 4);
+
+  const one = findMethodLocation(text, {
+    methodName: 'check',
+    descriptor: '(Ljava/lang/String;)V'
+  });
+  assert.equal(one.line, 1);
+});
+
+test('locationFor returns the method range, not position zero', async () => {
+  const { dir, def } = makeFixture();
+  const source = [
+    'public class Glue {',
+    '   public void hello() {',
+    '      System.out.println("hi");',
+    '   }',
+    '}'
+  ].join('\n');
+  const vscodeStub = {
+    Uri: uriStub(),
+    Range: class {
+      constructor(line, character, endLine, endCharacter) {
+        Object.assign(this, { start: { line, character }, end: { line: endLine, character: endCharacter } });
+      }
+    },
+    EventEmitter: class {
+      constructor() { this.event = () => ({ dispose() {} }); }
+      fire() {}
+      dispose() {}
+    },
+    commands: {
+      executeCommand: async (...args) => (args[1] === 'java.decompile' ? source : undefined)
+    },
+    window: {},
+    languages: {}
+  };
+  const { DecompiledDocumentProvider } = loadModule(vscodeStub);
+  const provider = new DecompiledDocumentProvider(dir);
+
+  try {
+    const found = await provider.locationFor(def, { warn() {} });
+    assert.equal(found.range.start.line, 1);
+    assert.equal(found.range.start.character, '   public void '.length);
+  } finally {
+    provider.dispose();
+    removeTree(dir);
+  }
+});
+
 test('falls back to opening the class file when no decompiler is available', async () => {
   const { dir, def } = makeFixture();
   const calls = [];

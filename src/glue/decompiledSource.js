@@ -9,6 +9,166 @@ const { ZipReader } = require('./zipReader');
 
 const DECOMPILED_SCHEME = 'cucumber-glue-source';
 
+// Words that can immediately precede a call but never a method declaration.
+const NON_TYPE_KEYWORDS = new Set([
+  'return', 'throw', 'if', 'else', 'for', 'while', 'do', 'switch', 'case',
+  'catch', 'try', 'finally', 'new', 'assert', 'yield', 'await', 'instanceof',
+  'synchronized', 'this', 'super', 'null', 'true', 'false', 'var'
+]);
+
+const PRIMITIVES = {
+  B: 'byte', C: 'char', D: 'double', F: 'float',
+  I: 'int', J: 'long', S: 'short', Z: 'boolean', V: 'void'
+};
+
+// Parses "(Ljava/lang/String;J)V" into [{ name: 'String', dims: 0 }, ...].
+// Returns null when the descriptor cannot be understood.
+function descriptorParams(descriptor) {
+  if (typeof descriptor !== 'string' || descriptor.charAt(0) !== '(') return null;
+  const out = [];
+  let i = 1;
+  while (i < descriptor.length && descriptor.charAt(i) !== ')') {
+    let dims = 0;
+    while (descriptor.charAt(i) === '[') { dims++; i++; }
+    const tag = descriptor.charAt(i);
+    if (tag === 'L') {
+      const end = descriptor.indexOf(';', i);
+      if (end < 0) return null;
+      const owner = descriptor.slice(i + 1, end).replace(/\//g, '.');
+      out.push({ name: owner.split('.').filter(Boolean).pop() || '', dims });
+      i = end + 1;
+    } else if (PRIMITIVES[tag]) {
+      out.push({ name: PRIMITIVES[tag], dims });
+      i++;
+    } else {
+      return null;
+    }
+  }
+  return descriptor.charAt(i) === ')' ? out : null;
+}
+
+function splitParams(text) {
+  const parts = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text.charAt(i);
+    if (ch === '<' || ch === '(' || ch === '[') depth++;
+    else if (ch === '>' || ch === ')' || ch === ']') depth = Math.max(0, depth - 1);
+    else if (ch === ',' && depth === 0) {
+      parts.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start));
+  return parts.map(p => p.trim()).filter(Boolean);
+}
+
+// Reduces a parameter declaration to a comparable simple type name.
+// "@NotNull final java.util.Map<String, Integer> args" -> "Map"
+function paramTypeName(raw) {
+  let s = String(raw)
+    .replace(/@[\w$.]+(\s*\((?:[^()]|\([^()]*\))*\))?/g, ' ')
+    .replace(/<[^<>]*>/g, ' ')
+    .replace(/\bfinal\b/g, ' ')
+    .replace(/\.\.\./g, '[]')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const segments = s.split(' ').filter(Boolean);
+  if (segments.length > 1) segments.pop();
+  const type = segments.join(' ').replace(/\s+/g, '');
+  const isArray = /\[\]/.test(type);
+  const simple = type.replace(/\[\]/g, '').split('.').filter(Boolean).pop() || '';
+  return { name: simple, isArray };
+}
+
+function offsetToPosition(text, offset) {
+  let line = 0;
+  let lineStart = 0;
+  for (let i = 0; i < offset; i++) {
+    if (text.charCodeAt(i) === 10) {
+      line++;
+      lineStart = i + 1;
+    }
+  }
+  return { line, character: offset - lineStart };
+}
+
+function declarationToken(text, nameStart) {
+  const head = text.slice(0, nameStart);
+  const match = /([\w$>\]\.]+)[ \t]+$/.exec(head);
+  if (!match) return null;
+  const token = match[1];
+  if (/[>\]]$/.test(token)) return token;
+  if (NON_TYPE_KEYWORDS.has(token)) return null;
+  if (!/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(token)) return null;
+  return token;
+}
+
+function matchingParen(text, open) {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    const ch = text.charAt(i);
+    if (ch === '(') depth++;
+    else if (ch === ')') {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+// Locates a method declaration inside decompiled source and returns its
+// position so navigation can reveal the method instead of the file top.
+function findMethodLocation(text, def) {
+  if (typeof text !== 'string' || !def || !def.methodName) return undefined;
+  const name = String(def.methodName);
+  if (!name || name === '<clinit>' || name === '<init>') return undefined;
+
+  const expected = descriptorParams(def.descriptor);
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`(?<![\\w$.:])${escaped}[ \\t]*\\(`, 'g');
+
+  let best;
+  let match;
+  while ((match = pattern.exec(text))) {
+    const nameStart = match.index;
+    if (!declarationToken(text, nameStart)) continue;
+
+    const open = text.indexOf('(', nameStart);
+    const close = matchingParen(text, open);
+    if (open < 0 || close < 0) continue;
+
+    const params = splitParams(text.slice(open + 1, close));
+    if (expected && params.length !== expected.length) continue;
+
+    let score = 0;
+    if (expected) {
+      for (let i = 0; i < params.length; i++) {
+        const actual = paramTypeName(params[i]);
+        if (actual.name === expected[i].name) score += 2;
+        if (actual.isArray === (expected[i].dims > 0)) score += 1;
+      }
+    }
+    // Prefer the best signature match, then the earliest declaration in the file.
+    if (!best || score > best.score) {
+      best = { score, nameStart };
+      if (!expected) break;
+    }
+  }
+
+  if (!best) return undefined;
+  const pos = offsetToPosition(text, best.nameStart);
+  return { line: pos.line, character: pos.character, length: name.length };
+}
+
+function rangeFor(text, def) {
+  if (typeof vscode.Range !== 'function') return undefined;
+  const loc = findMethodLocation(text, def);
+  if (!loc) return undefined;
+  return new vscode.Range(loc.line, loc.character, loc.line, loc.character + loc.length);
+}
+
 function hashString(s) {
   return crypto.createHash('sha256').update(s).digest('hex').slice(0, 20);
 }
@@ -113,7 +273,8 @@ class DecompiledDocumentProvider {
   async locationFor(def, log) {
     try {
       const result = await this.ensure(def, log);
-      return { uri: result.uri, range: new vscode.Range(0, 0, 0, 0) };
+      const range = rangeFor(result.text, def) || new vscode.Range(0, 0, 0, 0);
+      return { uri: result.uri, range };
     } catch (err) {
       if (log && log.warn) log.warn(def.jarPath, `decompile unavailable: ${err.message}`);
       return undefined;
@@ -140,6 +301,23 @@ class DecompiledDocumentProvider {
     if (editor && vscode.languages && vscode.languages.setTextDocumentLanguage) {
       await vscode.languages.setTextDocumentLanguage(editor.document, 'java');
     }
+    // setTextDocumentLanguage can recreate the document, so re-read the active
+    // editor before selecting, and reveal the method instead of the file top.
+    const target = vscode.window.activeTextEditor || editor;
+    const range = rangeFor(result.text, def);
+    if (range && target) {
+      if (typeof vscode.Selection === 'function') {
+        target.selection = new vscode.Selection(
+          range.start.line, range.start.character, range.end.line, range.end.character
+        );
+      }
+      if (typeof target.revealRange === 'function') {
+        const reveal = vscode.TextEditorRevealType
+          ? vscode.TextEditorRevealType.InCenterIfOutsideViewport
+          : 2;
+        target.revealRange(range, reveal);
+      }
+    }
     return { opened: 'decompiled', uri: result.uri, classFile: result.classFile, text: result.text };
   }
 
@@ -150,5 +328,6 @@ class DecompiledDocumentProvider {
 
 module.exports = {
   DECOMPILED_SCHEME, DecompiledDocumentProvider,
-  decompiledUri, extractClassFile, requestDecompiledSource
+  decompiledUri, extractClassFile, requestDecompiledSource,
+  descriptorParams, findMethodLocation
 };

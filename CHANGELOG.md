@@ -1,5 +1,10 @@
 # Changelog / 更新日志
 
+## 0.1.6
+
+- **中文**：修复反编译视图跳转不定位的问题。此前 `cucumberGlue.jarDefinitionView` 设为 `decompiled` 后，`Ctrl/Cmd+click` 只打开反编译文件并停在第一行；现在会解析反编译源码，按方法名、参数个数和参数类型（含重载区分）定位到方法声明所在行并选中方法名。「Open Decompiled Source」命令同样会滚动并选中目标方法。
+- **English**: Fixed decompiled navigation landing at the top of the file. With `cucumberGlue.jarDefinitionView` set to `decompiled`, `Ctrl/Cmd+click` used to open the decompiled file at line 1; it now parses the decompiled source and locates the method declaration by name, arity and parameter types (overloads included), then selects the method name. The `Open Decompiled Source` command also reveals and selects the target method.
+
 ## 0.1.5
 
 - **中文**：新增 `cucumberGlue.jarDefinitionView` 设置，可直接控制 `Ctrl/Cmd+click`（转到定义）打开 JAR 内 Glue 时使用哪种视图，无需再手动执行命令。设为 `decompiled` 后，跳转直接打开反编译源码；没有可用反编译器时自动回退到声明视图，不会跳转失败。默认值仍为 `declaration`，需要时改为 `decompiled` 即可全局生效。
