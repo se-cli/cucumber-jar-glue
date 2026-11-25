@@ -10,8 +10,10 @@ const { EventEmitter } = require('events');
 
 function fakeUri(raw) {
   let value = String(raw);
-  if (value.startsWith('file:///')) value = value.slice('file:///'.length);
-  value = decodeURIComponent(value).replace(/^\//, '');
+  if (value.startsWith('file://')) value = value.slice('file://'.length);
+  value = decodeURIComponent(value);
+  // file:///D:/x is a Windows drive path; file:///tmp/x is a POSIX absolute path.
+  if (/^\/[A-Za-z]:/.test(value)) value = value.slice(1);
   return { toString: () => raw, fsPath: value };
 }
 
@@ -45,7 +47,8 @@ function tempDir(label) {
 }
 
 function uriFor(fsPath) {
-  return `file:///${fsPath.replace(/\\/g, '/').replace(/^([a-zA-Z]):/, '$1:')}`;
+  const normalized = String(fsPath).replace(/\\/g, '/');
+  return `file://${normalized.startsWith('/') ? normalized : `/${normalized}`}`;
 }
 
 test('fromJavaLanguageServer uses project URI from java.project.getAll', async () => {
