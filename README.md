@@ -24,6 +24,7 @@ Marketplace：https://marketplace.visualstudio.com/items?itemName=se-cli.cucumbe
 | 诊断 | 未定义步骤、等价多定义警告 |
 | 兼容性 | Cucumber-JVM v1 (`cucumber.api.java.*`) 与 v2+ (`io.cucumber.java.*`)，含任意 locale 的本地化注解 |
 | 编辑器兼容 | 同时绑定 `gherkin` 与 `cucumber` language id，并兜底 `**/*.feature`，兼容 Cucumber 官方扩展 |
+| 多模块项目 | 聚合工作区内所有子模块项目的 classpath；Maven 回退按模块输出后合并 |
 | 匹配 | Java 正则 + Cucumber Expression 子集；支持发现的自定义 `ParameterType` |
 
 跳转 JAR 内定义时打开的是 `cucumber-glue:` **只读声明视图**（注解、类名、方法签名），不是反编译后的源码。方法体仍需 Java 反编译器扩展。
@@ -39,7 +40,7 @@ Marketplace：https://marketplace.visualstudio.com/items?itemName=se-cli.cucumbe
 或从 Release 下载 VSIX 离线安装：
 
 ```bash
-code --install-extension cucumber-jar-glue-0.1.1.vsix --force
+code --install-extension cucumber-jar-glue-0.1.2.vsix --force
 ```
 
 开发调试：
@@ -53,8 +54,8 @@ code --extensionDevelopmentPath=D:\code\cucumber-for-Java
 
 `auto`（默认）依次尝试：
 
-1. Java 语言服务器：`java.execute.workspaceCommand('java.project.getAll')` 取项目 URI，再以项目 URI 调 `java.project.getClasspaths`（优先 `scope: 'test'`）。
-2. Maven：`mvn dependency:build-classpath`。
+1. Java 语言服务器：`java.execute.workspaceCommand('java.project.getAll')` 取项目 URI，再对**所有匹配项目**（含子模块）调 `java.project.getClasspaths` 并合并（优先 `scope: 'test'`）。
+2. Maven：`mvn dependency:build-classpath`，按模块分别写输出再合并，避免最后一个模块覆盖先前结果。
 3. Gradle：注入临时 init script 打印 runtimeClasspath（不改你的构建文件）。
 4. `cucumberGlue.classpathRoots` 手动 glob。
 
@@ -116,6 +117,7 @@ This extension fills the gap for Gherkin steps whose glue lives inside dependenc
 | Diagnostics | Warnings for undefined steps and information for equally good matches |
 | Compatibility | Cucumber-JVM v1 (`cucumber.api.java.*`) and v2+ (`io.cucumber.java.*`), including localized annotations in any locale |
 | Editor compatibility | Binds both `gherkin` and `cucumber` language ids, with a `**/*.feature` fallback for the official Cucumber extension |
+| Multi-module projects | Aggregates classpaths from every module project in the workspace; the Maven fallback merges per-module outputs |
 | Matching | Java regex plus a Cucumber Expression subset; discovers custom `ParameterType`s |
 
 Navigating to a JAR definition opens a `cucumber-glue:` **read-only declaration view** (annotation, class name, method signature), not decompiled source. Method bodies still require a Java decompiler extension.
@@ -131,7 +133,7 @@ Extension ID: se-cli.cucumber-jar-glue
 Or download the VSIX from the release and install offline:
 
 ```bash
-code --install-extension cucumber-jar-glue-0.1.1.vsix --force
+code --install-extension cucumber-jar-glue-0.1.2.vsix --force
 ```
 
 For development:
@@ -145,8 +147,8 @@ code --extensionDevelopmentPath=D:\code\cucumber-for-Java
 
 `auto` (the default) tries, in order:
 
-1. Java language server: `java.execute.workspaceCommand('java.project.getAll')` for project URIs, then `java.project.getClasspaths` with the project URI (preferring `scope: 'test'`).
-2. Maven: `mvn dependency:build-classpath`.
+1. Java language server: `java.execute.workspaceCommand('java.project.getAll')` for project URIs, then `java.project.getClasspaths` on **every matching project** (including submodules) and merge the results (preferring `scope: 'test'`).
+2. Maven: `mvn dependency:build-classpath`, with one output per module merged together so the last module cannot overwrite earlier ones.
 3. Gradle: a temporary init script prints runtimeClasspath (your build files are not modified).
 4. Manual globs from `cucumberGlue.classpathRoots`.
 
